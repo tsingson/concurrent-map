@@ -1,21 +1,27 @@
 package cmap
 
 import (
+	"runtime"
 	"strconv"
 	"sync"
 	"testing"
+	"time"
 )
 
 func BenchmarkItems(b *testing.B) {
 	m := New()
+	b.ReportAllocs()
+	b.SetParallelism(runtime.NumCPU() * 2)
+	b.StartTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			i:= strconv.FormatInt(time.Now().Unix(), 10)
+			m.Set(i , Animal{name:i })
+			m.Items()
+		}
+	})
 
-	// Insert 100 elements.
-	for i := 0; i < 10000; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
-	}
-	for i := 0; i < b.N; i++ {
-		m.Items()
-	}
+
 }
 
 func BenchmarkMarshalJson(b *testing.B) {
@@ -25,6 +31,7 @@ func BenchmarkMarshalJson(b *testing.B) {
 	for i := 0; i < 10000; i++ {
 		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
 	}
+
 	for i := 0; i < b.N; i++ {
 		_, err := m.MarshalJSON()
 		if err != nil {
